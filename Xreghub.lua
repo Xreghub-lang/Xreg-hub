@@ -1,8 +1,10 @@
 loadstring([==[
 --// Xreg Hub | Defusal (CN Entertainment)
---// Key: XREG-2025 | Insert = toggle UI | RMB = aimbot
+--// Key: XREG-2025
+--// Insert = toggle UI | RMB = aimbot
 
-local KEY = "example"
+local KEY = "XREG-2025"
+local KEY_LINK = "https://jnkie.com/flow/b4619717-919b-40f8-9bcc-f68b6857ec00"
 
 local Players    = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -11,11 +13,14 @@ local Camera     = workspace.CurrentCamera
 local LP         = Players.LocalPlayer
 local floor, clamp = math.floor, math.clamp
 
+local PlayerGui = LP:WaitForChild("PlayerGui", 10)
+if not PlayerGui then return end
+
 local CFG = {
     ESP_ENABLED=true, ESP_BOX=true, ESP_NAME=true,
     ESP_DISTANCE=true, ESP_HEALTH_BAR=true, ESP_TRACER=false,
     BOX_THICKNESS=1.5, TEXT_SIZE=13, TEAM_COLORS=true,
-    BOMB_MODEL_NAME="Bomb", -- volatile: verify in workspace tree
+    BOMB_MODEL_NAME="Bomb",
     AIM_ENABLED=false, AIM_SMOOTH=0.15, AIM_FOV=150,
     AIM_SHOW_FOV=true, AIM_BONE="Head",
     NO_MUZZLE=false, FOV_VALUE=70,
@@ -27,7 +32,6 @@ local CFG = {
     COLOR_SHADOW= Color3.fromRGB(  0,  0,  0),
 }
 
--- Drawing helpers
 local function newLine(t,c)
     local l=Drawing.new("Line") l.Thickness=t or 1 l.Color=c or Color3.new(1,1,1)
     l.Transparency=1 l.Visible=false l.ZIndex=5 return l
@@ -50,7 +54,6 @@ local function newCircle(r,c,t)
     ci.Thickness=t or 1 ci.Filled=false ci.Visible=false ci.ZIndex=7 return ci
 end
 
--- Utils
 local function w2s(pos)
     local sp,on=Camera:WorldToViewportPoint(pos) return Vector2.new(sp.X,sp.Y),on,sp.Z
 end
@@ -82,7 +85,6 @@ local function findBomb()
     if b:IsA("BasePart") then return b end return b:FindFirstChildOfClass("BasePart")
 end
 
--- ESP pool
 local ESPPool={}
 local function allocESP(p)
     local c=getTeamColor(p)
@@ -98,7 +100,6 @@ local function freeESP(o) for _,v in pairs(o) do v:Remove() end end
 local BombESP={label=newText(CFG.TEXT_SIZE,CFG.COLOR_BOMB,true),tracer=newLine(1.5,CFG.COLOR_BOMB)}
 local fovCircle=newCircle(CFG.AIM_FOV,Color3.fromRGB(255,255,255),1)
 
--- Aimbot
 local aiming=false
 UIS.InputBegan:Connect(function(i,gpe)
     if not gpe and i.UserInputType==Enum.UserInputType.MouseButton2 then aiming=true end
@@ -125,7 +126,6 @@ local function getAimTarget()
     return best
 end
 
--- Muzzle flash
 local muzzleT=0
 local function disableMuzzle()
     local char=LP.Character if not char then return end
@@ -152,68 +152,118 @@ end
 -- GUI
 -- ══════════════════════════════════════════════════════════════
 local function makeGui()
-    local old=LP.PlayerGui:FindFirstChild("XregHub") if old then old:Destroy() end
+    local old=PlayerGui:FindFirstChild("XregHub") if old then old:Destroy() end
+
     local gui=Instance.new("ScreenGui")
     gui.Name="XregHub" gui.ResetOnSpawn=false
-    gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling gui.Parent=LP.PlayerGui
+    gui.IgnoreGuiInset=true
+    gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+    gui.Parent=PlayerGui
 
     -- ── KEY SCREEN ─────────────────────────────────────────
     local kf=Instance.new("Frame")
-    kf.Size=UDim2.new(0,340,0,170) kf.Position=UDim2.new(0.5,-170,0.5,-85)
-    kf.BackgroundColor3=Color3.fromRGB(14,14,14) kf.BorderSizePixel=0 kf.Parent=gui
+    kf.Name="KeyFrame"
+    kf.Size=UDim2.new(0,360,0,240)
+    kf.Position=UDim2.new(0.5,-180,0.5,-120)
+    kf.BackgroundColor3=Color3.fromRGB(14,14,14)
+    kf.BorderSizePixel=0 kf.Visible=true kf.Parent=gui
 
-    local accent1=Instance.new("Frame")
-    accent1.Size=UDim2.new(1,0,0,3) accent1.BackgroundColor3=Color3.fromRGB(255,220,60)
-    accent1.BorderSizePixel=0 accent1.Parent=kf
+    -- yellow accent bar
+    local accent=Instance.new("Frame")
+    accent.Size=UDim2.new(1,0,0,3)
+    accent.BackgroundColor3=Color3.fromRGB(255,220,60)
+    accent.BorderSizePixel=0 accent.Parent=kf
 
+    -- title bar
     local ktb=Instance.new("Frame")
-    ktb.Position=UDim2.new(0,0,0,3) ktb.Size=UDim2.new(1,0,0,34)
+    ktb.Position=UDim2.new(0,0,0,3) ktb.Size=UDim2.new(1,0,0,36)
     ktb.BackgroundColor3=Color3.fromRGB(20,20,20) ktb.BorderSizePixel=0 ktb.Parent=kf
 
-    local ktl=Instance.new("TextLabel")
-    ktl.Size=UDim2.new(1,0,1,0) ktl.BackgroundTransparency=1
-    ktl.Text="Xreg Hub" ktl.TextSize=17 ktl.TextColor3=Color3.fromRGB(255,220,60)
-    ktl.Font=Enum.Font.GothamBold ktl.Parent=ktb
+    local ktitle=Instance.new("TextLabel")
+    ktitle.Size=UDim2.new(1,0,1,0) ktitle.BackgroundTransparency=1
+    ktitle.Text="🔑  Xreg Hub — Key System"
+    ktitle.TextSize=15 ktitle.TextColor3=Color3.fromRGB(255,220,60)
+    ktitle.Font=Enum.Font.GothamBold ktitle.Parent=ktb
 
-    local ksub=Instance.new("TextLabel")
-    ksub.Position=UDim2.new(0,0,0,44) ksub.Size=UDim2.new(1,0,0,18)
-    ksub.BackgroundTransparency=1 ksub.Text="Enter your key to unlock"
-    ksub.TextSize=12 ksub.TextColor3=Color3.fromRGB(140,140,140)
-    ksub.Font=Enum.Font.Gotham ksub.Parent=kf
+    -- instruction
+    local kinst=Instance.new("TextLabel")
+    kinst.Position=UDim2.new(0,0,0,48) kinst.Size=UDim2.new(1,0,0,18)
+    kinst.BackgroundTransparency=1
+    kinst.Text="Complete the checkpoint below to receive your key"
+    kinst.TextSize=12 kinst.TextColor3=Color3.fromRGB(150,150,150)
+    kinst.Font=Enum.Font.Gotham kinst.Parent=kf
 
+    -- GET KEY button
+    local gkb=Instance.new("TextButton")
+    gkb.Position=UDim2.new(0,12,0,74) gkb.Size=UDim2.new(1,-24,0,38)
+    gkb.BackgroundColor3=Color3.fromRGB(255,220,60) gkb.BorderSizePixel=0
+    gkb.Text="🔗  Get Key" gkb.TextSize=14
+    gkb.TextColor3=Color3.fromRGB(14,14,14) gkb.Font=Enum.Font.GothamBold gkb.Parent=kf
+
+    local gcopy=Instance.new("TextLabel")
+    gcopy.Position=UDim2.new(0,0,0,116) gcopy.Size=UDim2.new(1,0,0,14)
+    gcopy.BackgroundTransparency=1 gcopy.Text=""
+    gcopy.TextSize=11 gcopy.TextColor3=Color3.fromRGB(100,220,100)
+    gcopy.Font=Enum.Font.Gotham gcopy.Parent=kf
+
+    -- copy link to clipboard on click
+    gkb.MouseButton1Click:Connect(function()
+        pcall(function() setclipboard(KEY_LINK) end)
+        gcopy.Text="✔  Link copied to clipboard — paste in browser"
+        gkb.Text="🔗  Copied!"
+        gkb.BackgroundColor3=Color3.fromRGB(70,190,70)
+        gkb.TextColor3=Color3.fromRGB(255,255,255)
+        task.delay(3, function()
+            gkb.Text="🔗  Get Key"
+            gkb.BackgroundColor3=Color3.fromRGB(255,220,60)
+            gkb.TextColor3=Color3.fromRGB(14,14,14)
+            gcopy.Text=""
+        end)
+    end)
+
+    -- divider
+    local kdiv=Instance.new("Frame")
+    kdiv.Position=UDim2.new(0,12,0,138) kdiv.Size=UDim2.new(1,-24,0,1)
+    kdiv.BackgroundColor3=Color3.fromRGB(35,35,35) kdiv.BorderSizePixel=0 kdiv.Parent=kf
+
+    -- input row
     local kb=Instance.new("TextBox")
-    kb.Position=UDim2.new(0,16,0,70) kb.Size=UDim2.new(0,230,0,34)
-    kb.BackgroundColor3=Color3.fromRGB(26,26,26) kb.BorderSizePixel=0
-    kb.Text="" kb.PlaceholderText="Key here..."
-    kb.TextColor3=Color3.fromRGB(255,255,255) kb.PlaceholderColor3=Color3.fromRGB(80,80,80)
+    kb.Position=UDim2.new(0,12,0,148) kb.Size=UDim2.new(0,240,0,34)
+    kb.BackgroundColor3=Color3.fromRGB(24,24,24) kb.BorderSizePixel=0
+    kb.Text="" kb.PlaceholderText="Paste key here..."
+    kb.TextColor3=Color3.fromRGB(255,255,255) kb.PlaceholderColor3=Color3.fromRGB(70,70,70)
     kb.Font=Enum.Font.Gotham kb.TextSize=13 kb.ClearTextOnFocus=false kb.Parent=kf
 
     local ksb=Instance.new("TextButton")
-    ksb.Position=UDim2.new(0,254,0,70) ksb.Size=UDim2.new(0,70,0,34)
+    ksb.Position=UDim2.new(0,260,0,148) ksb.Size=UDim2.new(0,88,0,34)
     ksb.BackgroundColor3=Color3.fromRGB(255,220,60) ksb.BorderSizePixel=0
-    ksb.Text="Enter" ksb.TextSize=13 ksb.TextColor3=Color3.fromRGB(14,14,14)
-    ksb.Font=Enum.Font.GothamBold ksb.Parent=kf
+    ksb.Text="Unlock" ksb.TextSize=13
+    ksb.TextColor3=Color3.fromRGB(14,14,14) ksb.Font=Enum.Font.GothamBold ksb.Parent=kf
 
     local kerr=Instance.new("TextLabel")
-    kerr.Position=UDim2.new(0,0,0,112) kerr.Size=UDim2.new(1,0,0,16)
+    kerr.Position=UDim2.new(0,0,0,188) kerr.Size=UDim2.new(1,0,0,16)
     kerr.BackgroundTransparency=1 kerr.Text=""
     kerr.TextSize=12 kerr.TextColor3=Color3.fromRGB(255,80,80)
     kerr.Font=Enum.Font.Gotham kerr.Parent=kf
 
-    local khint=Instance.new("TextLabel")
-    khint.Position=UDim2.new(0,0,0,136) khint.Size=UDim2.new(1,0,0,14)
-    khint.BackgroundTransparency=1 khint.Text="default key: XREG-2025"
-    khint.TextSize=11 khint.TextColor3=Color3.fromRGB(60,60,60)
-    khint.Font=Enum.Font.Gotham khint.Parent=kf
+    local kver=Instance.new("TextLabel")
+    kver.Position=UDim2.new(0,0,0,216) kver.Size=UDim2.new(1,0,0,12)
+    kver.BackgroundTransparency=1 kver.Text="Xreg Hub v1.0  |  Defusal by CN Entertainment"
+    kver.TextSize=10 kver.TextColor3=Color3.fromRGB(40,40,40)
+    kver.Font=Enum.Font.Gotham kver.Parent=kf
 
     -- ── MAIN PANEL ─────────────────────────────────────────
     local mf=Instance.new("Frame")
-    mf.Size=UDim2.new(0,400,0,320) mf.Position=UDim2.new(0.5,-200,0.5,-160)
-    mf.BackgroundColor3=Color3.fromRGB(14,14,14) mf.BorderSizePixel=0
-    mf.Active=true mf.Draggable=true mf.Visible=false mf.Parent=gui
+    mf.Name="MainFrame"
+    mf.Size=UDim2.new(0,400,0,320)
+    mf.Position=UDim2.new(0.5,-200,0.5,-160)
+    mf.BackgroundColor3=Color3.fromRGB(14,14,14)
+    mf.BorderSizePixel=0 mf.Active=true mf.Draggable=true
+    mf.Visible=false mf.Parent=gui
 
     local accent2=Instance.new("Frame")
-    accent2.Size=UDim2.new(1,0,0,3) accent2.BackgroundColor3=Color3.fromRGB(255,220,60)
+    accent2.Size=UDim2.new(1,0,0,3)
+    accent2.BackgroundColor3=Color3.fromRGB(255,220,60)
     accent2.BorderSizePixel=0 accent2.Parent=mf
 
     local mtb=Instance.new("Frame")
@@ -232,22 +282,18 @@ local function makeGui()
     mcb.TextColor3=Color3.fromRGB(180,180,180) mcb.Font=Enum.Font.GothamBold mcb.Parent=mtb
     mcb.MouseButton1Click:Connect(function() mf.Visible=false end)
 
-    -- tab bar
     local tabBarF=Instance.new("Frame")
     tabBarF.Position=UDim2.new(0,0,0,37) tabBarF.Size=UDim2.new(1,0,0,30)
     tabBarF.BackgroundColor3=Color3.fromRGB(18,18,18) tabBarF.BorderSizePixel=0 tabBarF.Parent=mf
 
-    -- divider line under tabs
     local tdiv=Instance.new("Frame")
     tdiv.Position=UDim2.new(0,0,0,67) tdiv.Size=UDim2.new(1,0,0,1)
     tdiv.BackgroundColor3=Color3.fromRGB(30,30,30) tdiv.BorderSizePixel=0 tdiv.Parent=mf
 
-    -- content area
     local ca=Instance.new("Frame")
     ca.Position=UDim2.new(0,0,0,68) ca.Size=UDim2.new(1,0,1,-68)
     ca.BackgroundTransparency=1 ca.Parent=mf
 
-    -- tab system
     local tabFrames,tabBtns={},{}
     local tabNames={"ESP","Aimbot","Visuals"}
     local tw=1/#tabNames
@@ -273,7 +319,6 @@ local function makeGui()
         tb.Font=Enum.Font.GothamBold tb.Parent=tabBarF
         tabBtns[name]=tb
         tb.MouseButton1Click:Connect(function() setTab(name) end)
-
         local sf=Instance.new("ScrollingFrame")
         sf.Size=UDim2.new(1,0,1,0) sf.BackgroundTransparency=1 sf.BorderSizePixel=0
         sf.ScrollBarThickness=3 sf.CanvasSize=UDim2.new(0,0,0,0)
@@ -281,21 +326,17 @@ local function makeGui()
         tabFrames[name]=sf
     end
 
-    -- widget: toggle
     local function mkToggle(parent,label,y,get,set)
         local row=Instance.new("Frame")
         row.Position=UDim2.new(0,10,0,y) row.Size=UDim2.new(1,-20,0,28)
         row.BackgroundTransparency=1 row.Parent=parent
-
         local lbl=Instance.new("TextLabel")
         lbl.Size=UDim2.new(1,-54,1,0) lbl.BackgroundTransparency=1
         lbl.Text=label lbl.TextSize=13 lbl.TextColor3=Color3.fromRGB(210,210,210)
         lbl.Font=Enum.Font.Gotham lbl.TextXAlignment=Enum.TextXAlignment.Left lbl.Parent=row
-
         local tog=Instance.new("TextButton")
         tog.Position=UDim2.new(1,-48,0.5,-12) tog.Size=UDim2.new(0,48,0,24)
         tog.BorderSizePixel=0 tog.Font=Enum.Font.GothamBold tog.TextSize=11 tog.Parent=row
-
         local function ref()
             local v=get()
             tog.BackgroundColor3=v and Color3.fromRGB(70,190,70) or Color3.fromRGB(48,48,48)
@@ -307,25 +348,20 @@ local function makeGui()
         return y+32
     end
 
-    -- widget: slider
     local function mkSlider(parent,label,y,mn,mx,get,set)
         local row=Instance.new("Frame")
         row.Position=UDim2.new(0,10,0,y) row.Size=UDim2.new(1,-20,0,48)
         row.BackgroundTransparency=1 row.Parent=parent
-
         local lbl=Instance.new("TextLabel")
         lbl.Size=UDim2.new(1,0,0,18) lbl.BackgroundTransparency=1
         lbl.Text=label..": "..get() lbl.TextSize=13 lbl.TextColor3=Color3.fromRGB(210,210,210)
         lbl.Font=Enum.Font.Gotham lbl.TextXAlignment=Enum.TextXAlignment.Left lbl.Parent=row
-
         local trackBg=Instance.new("Frame")
         trackBg.Position=UDim2.new(0,0,0,26) trackBg.Size=UDim2.new(1,0,0,8)
         trackBg.BackgroundColor3=Color3.fromRGB(36,36,36) trackBg.BorderSizePixel=0 trackBg.Parent=row
-
         local fill=Instance.new("Frame")
         fill.Size=UDim2.new((get()-mn)/(mx-mn),0,1,0)
         fill.BackgroundColor3=Color3.fromRGB(255,220,60) fill.BorderSizePixel=0 fill.Parent=trackBg
-
         local dragging=false
         trackBg.InputBegan:Connect(function(inp)
             if inp.UserInputType==Enum.UserInputType.MouseButton1 then
@@ -348,7 +384,6 @@ local function makeGui()
         return y+54
     end
 
-    -- ── ESP TAB ─────────────────────────────────────────────
     do
         local t=tabFrames["ESP"] local y=8
         y=mkToggle(t,"ESP Enabled",  y,function() return CFG.ESP_ENABLED    end,function(v) CFG.ESP_ENABLED=v    end)
@@ -360,8 +395,6 @@ local function makeGui()
         y=mkToggle(t,"Team Colors",  y,function() return CFG.TEAM_COLORS    end,function(v) CFG.TEAM_COLORS=v    end)
         t.CanvasSize=UDim2.new(0,0,0,y+10)
     end
-
-    -- ── AIMBOT TAB ──────────────────────────────────────────
     do
         local t=tabFrames["Aimbot"] local y=8
         y=mkToggle(t,"Aimbot (RMB)", y,function() return CFG.AIM_ENABLED  end,function(v) CFG.AIM_ENABLED=v  end)
@@ -374,8 +407,6 @@ local function makeGui()
             function(v) CFG.AIM_FOV=v fovCircle.Radius=v end)
         t.CanvasSize=UDim2.new(0,0,0,y+10)
     end
-
-    -- ── VISUALS TAB ─────────────────────────────────────────
     do
         local t=tabFrames["Visuals"] local y=8
         y=mkToggle(t,"No Muzzle Flash",y,function() return CFG.NO_MUZZLE end,function(v)
@@ -390,20 +421,27 @@ local function makeGui()
 
     setTab("ESP")
 
-    -- Key validation
-    ksb.MouseButton1Click:Connect(function()
-        if kb.Text==KEY then
-            kf.Visible=false mf.Visible=true
+    local function tryKey()
+        local input=kb.Text:gsub("%s","")
+        if input==KEY then
+            kerr.Text="" kf.Visible=false mf.Visible=true
+            print("[Xreg Hub] unlocked")
         else
-            kerr.Text="Invalid key." kb.Text=""
+            kerr.Text="✖  Invalid key — click Get Key above"
+            kb.Text=""
+        end
+    end
+    ksb.MouseButton1Click:Connect(tryKey)
+    kb.FocusLost:Connect(function(enter) if enter then tryKey() end end)
+
+    UIS.InputBegan:Connect(function(inp,gpe)
+        if gpe then return end
+        if inp.KeyCode==Enum.KeyCode.Insert then
+            if not kf.Visible then mf.Visible=not mf.Visible end
         end
     end)
 
-    -- Insert to toggle panel
-    UIS.InputBegan:Connect(function(inp,gpe)
-        if gpe then return end
-        if inp.KeyCode==Enum.KeyCode.Insert then mf.Visible=not mf.Visible end
-    end)
+    print("[Xreg Hub] loaded — click Get Key to get your key")
 end
 
 -- ══════════════════════════════════════════════════════════════
@@ -414,8 +452,7 @@ RunService.RenderStepped:Connect(function()
     local sb=Vector2.new(vp.X/2,vp.Y-5)
     local sc=Vector2.new(vp.X/2,vp.Y/2)
 
-    fovCircle.Position=sc
-    fovCircle.Radius=CFG.AIM_FOV
+    fovCircle.Position=sc fovCircle.Radius=CFG.AIM_FOV
     fovCircle.Visible=CFG.AIM_ENABLED and CFG.AIM_SHOW_FOV
 
     if CFG.AIM_ENABLED and aiming then
@@ -481,5 +518,4 @@ RunService.RenderStepped:Connect(function()
 end)
 
 makeGui()
-print("[Xreg Hub] loaded | key: XREG-2025 | Insert = toggle UI | RMB = aim")
 ]==])()
