@@ -2,7 +2,7 @@ loadstring([==[
 --// Xreg Hub | Defusal (CN Entertainment)
 --// Key: XREG-2025 | Insert = toggle UI | RMB = aimbot
 
-local KEY = "XREG-2025"
+local KEY = "example"
 
 local Players    = game:GetService("Players")
 local RunService = game:GetService("RunService")
